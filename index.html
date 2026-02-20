@@ -67,6 +67,17 @@
   }
   .toggle-btn.active { background: #334155; color: #f8fafc; }
 
+  .min-basvuru-wrap {
+    display: none; align-items: center; gap: 6px; margin-left: 12px;
+  }
+  .min-basvuru-wrap.active { display: flex; }
+  .min-basvuru-wrap label { font-size: 13px; color: #94a3b8; white-space: nowrap; }
+  .min-basvuru-wrap input {
+    width: 72px; padding: 5px 8px; border-radius: 6px; border: 1px solid #334155;
+    background: #1e293b; color: #e2e8f0; font-size: 13px; text-align: center; outline: none;
+  }
+  .min-basvuru-wrap input:focus { border-color: #38bdf8; }
+
   .content { padding: 0 32px 32px; }
 
   .section-title {
@@ -167,6 +178,10 @@
 <div class="toggle-row">
   <button class="toggle-btn active" data-view="il">İl Bazında</button>
   <button class="toggle-btn" data-view="ilce">İlçe Bazında</button>
+  <div class="min-basvuru-wrap" id="minBasvuruWrap">
+    <label>Min. başvuru:</label>
+    <input type="number" id="minBasvuruInput" value="50" min="0" step="10">
+  </div>
 </div>
 
 <div class="content">
@@ -181,6 +196,7 @@ const EKSIK_ILLER = ["ANKARA","HATAY","IZMIR","MUGLA","İSTANBUL"];
 let currentCat = "genc";
 let currentView = "il";
 let searchTerm = "";
+let minBasvuru = 0;
 
 const activeIl = DATA.length;
 const totalProje = DATA.reduce((s, il) => s + il.toplamProje, 0);
@@ -241,9 +257,23 @@ document.querySelectorAll(".toggle-btn").forEach(btn => {
     document.querySelectorAll(".toggle-btn").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     currentView = btn.dataset.view;
+    const wrap = document.getElementById("minBasvuruWrap");
+    if (currentView === "ilce") {
+      wrap.classList.add("active");
+      minBasvuru = parseInt(document.getElementById("minBasvuruInput").value) || 0;
+    } else {
+      wrap.classList.remove("active");
+      minBasvuru = 0;
+    }
     document.getElementById("detailView").classList.remove("active");
     render();
   });
+});
+
+// Min başvuru input
+document.getElementById("minBasvuruInput").addEventListener("input", (e) => {
+  minBasvuru = parseInt(e.target.value) || 0;
+  if (currentView === "ilce") render();
 });
 
 // Search
@@ -274,6 +304,7 @@ function getIlceRows() {
     for (const ilce of il.ilceler) {
       const k = ilce.kategoriler?.[currentCat];
       if (!k || k.basvuru === 0) continue;
+      if (minBasvuru > 0 && k.basvuru < minBasvuru) continue;
       const name = il.ilAdi + " / " + ilce.ilce;
       if (searchTerm && !name.toLowerCase().includes(searchTerm)) continue;
       rows.push({
